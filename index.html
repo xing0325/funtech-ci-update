@@ -120,10 +120,18 @@
 
   /* diagonal stripes */
   .stripes{
-    z-index:2;opacity:.5;mix-blend-mode:multiply;
+    z-index:2;opacity:.4;mix-blend-mode:multiply;
     background:repeating-linear-gradient(-135deg,
       rgba(0,0,0,0) 0, rgba(0,0,0,0) 7px,
       rgba(0,0,0,.16) 7px, rgba(0,0,0,.16) 8px);
+  }
+  /* fractal-noise grain — textures the red marquee + dark bg (static SVG filter, cheap) */
+  .svg-defs{position:absolute;width:0;height:0;pointer-events:none;overflow:hidden;}
+  .grain-tex{
+    z-index:2;
+    width:100%;height:100%;
+    opacity:.62;
+    mix-blend-mode:overlay;
   }
   /* vignette */
   .vignette{
@@ -160,6 +168,7 @@
     position:absolute;line-height:.9;letter-spacing:.5px;
     font-size:clamp(32px, 6.2cqw, 80px);
     text-shadow:0 3px 26px rgba(0,0,0,.6), 0 0 2px rgba(0,0,0,.4);
+    filter:url(#fx-rough);            /* rough, noise-displaced edges (matches original) */
     opacity:0;transform:translateY(26px);
     animation:rise .9s cubic-bezier(.16,1,.3,1) forwards;
   }
@@ -281,6 +290,22 @@
 </style>
 </head>
 <body>
+<!-- SVG filters: fractal-noise grain (static, cheap) + rough displaced edges (like the original's noise-text-edge-filter) -->
+<svg class="svg-defs" width="0" height="0" aria-hidden="true" focusable="false">
+  <filter id="fx-grain">
+    <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2" stitchTiles="stitch" result="n"/>
+    <feColorMatrix in="n" type="saturate" values="0" result="g"/>
+    <feComponentTransfer in="g">
+      <feFuncR type="linear" slope="2.6" intercept="-0.8"/>
+      <feFuncG type="linear" slope="2.6" intercept="-0.8"/>
+      <feFuncB type="linear" slope="2.6" intercept="-0.8"/>
+    </feComponentTransfer>
+  </filter>
+  <filter id="fx-rough" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.45 0.45" numOctaves="2" seed="11" stitchTiles="stitch" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
 <div class="frame">
 
   <!-- LEFT RAIL : thumbnail nav -->
@@ -296,6 +321,7 @@
   <section class="stage" id="stage">
     <div class="layer marquee" id="marquee"></div>
     <div class="layer stripes"></div>
+    <svg class="layer grain-tex" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" filter="url(#fx-grain)"/></svg>
     <div class="layer vignette"></div>
     <canvas id="noise"></canvas>
     <div class="layer noise-border"></div>
