@@ -245,6 +245,16 @@
   .ov-item.active img{opacity:1;filter:none;}
   .ov-item.active::after{content:"NOW";position:absolute;top:7px;right:7px;font-family:var(--disp);font-weight:900;font-size:10px;letter-spacing:1px;color:#fff;background:var(--red);padding:2px 6px;}
 
+  /* toast (cross-page nav stays inside the clone) */
+  .toast{
+    position:fixed;left:50%;bottom:76px;transform:translate(-50%,16px);z-index:60;
+    background:rgba(18,19,20,.96);border:1px solid var(--red);color:var(--fg);
+    font-family:var(--ui);font-weight:600;font-size:12px;letter-spacing:.4px;
+    padding:11px 18px;box-shadow:0 8px 30px rgba(0,0,0,.55);
+    opacity:0;transition:opacity .35s, transform .35s;pointer-events:none;max-width:90vw;text-align:center;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0);}
+
   /* ---------- responsive ---------- */
   @media (max-width:820px){
     :root{--rail:0px;--bottom:66px;}
@@ -316,7 +326,7 @@
 
   <!-- BOTTOM BAR -->
   <footer class="bottom">
-    <a class="nav-lnk prev" href="https://ci.funtech.inc/en/brand-message">
+    <a class="nav-lnk prev xpage" href="#" data-slide="brand-message">
       <span class="ar">‹</span>
       <span><span class="sub">PREV</span><span class="num">02</span>&nbsp;<span class="tt">BRAND MESSAGE</span></span>
     </a>
@@ -329,7 +339,7 @@
       <span class="sep">/</span>
       <span class="lang"><b>EN</b> / JP</span>
     </nav>
-    <a class="nav-lnk next" href="https://ci.funtech.inc/en/vision-visual" style="text-align:right">
+    <a class="nav-lnk next xpage" href="#" data-slide="vision-visual" style="text-align:right">
       <span><span class="sub">NEXT</span><span class="num">04</span>&nbsp;<span class="tt">VISION VISUAL</span></span>
       <span class="ar">›</span>
     </a>
@@ -435,8 +445,8 @@
   var railTrack = document.getElementById('railTrack');
   PAGES.forEach(function(p,i){
     var a=document.createElement('a');
-    a.className='thumb'+(i===CURRENT?' active':'');
-    a.href = (i===CURRENT) ? '#' : SITE+p[0];
+    a.className='thumb'+(i===CURRENT?' active':' xpage');
+    a.href='#'; a.dataset.slide=p[0];
     a.innerHTML='<img loading="lazy" src="thumbnails/'+p[0]+'.webp" alt="'+p[1]+'">'
       +'<span class="cap"><span class="n">'+pad2(i+1)+'</span>'+p[1]+'</span>';
     railTrack.appendChild(a);
@@ -457,8 +467,8 @@
   var ovGrid=document.getElementById('ovGrid');
   PAGES.forEach(function(p,i){
     var a=document.createElement('a');
-    a.className='ov-item'+(i===CURRENT?' active':'');
-    a.href=(i===CURRENT)?'#':SITE+p[0];
+    a.className='ov-item'+(i===CURRENT?' active':' xpage');
+    a.href='#'; a.dataset.slide=p[0];
     a.innerHTML='<img loading="lazy" src="thumbnails/'+p[0]+'.webp" alt="'+p[1]+'">'
       +'<span class="cap"><span class="n">'+pad2(i+1)+'</span>'+p[1]+'</span>';
     ovGrid.appendChild(a);
@@ -471,6 +481,26 @@
   document.getElementById('menuClose').addEventListener('click',function(){setMenu(false);});
   document.addEventListener('keydown',function(e){if(e.key==='Escape')setMenu(false);});
   overlay.addEventListener('click',function(e){if(e.target===overlay)setMenu(false);});
+
+  // cross-page nav (prev/next/rail/menu → sibling slides) stays INSIDE the clone —
+  // those pages live in other parallel sessions, so we don't yank the user to the live site.
+  var toastEl, toastTimer;
+  function toast(msg){
+    if(toastEl) toastEl.remove();
+    toastEl=document.createElement('div'); toastEl.className='toast'; toastEl.textContent=msg;
+    document.body.appendChild(toastEl);
+    requestAnimationFrame(function(){ toastEl.classList.add('show'); });
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){ if(toastEl){ toastEl.classList.remove('show'); } },2800);
+  }
+  document.addEventListener('click',function(e){
+    var a=e.target.closest ? e.target.closest('a.xpage') : null;
+    if(!a) return;
+    e.preventDefault();
+    setMenu(false);
+    var slide=(a.dataset.slide||'').replace(/-/g,' ').toUpperCase();
+    toast('这是第 3 页(CI UPDATE)独立克隆 · '+(slide?slide+' ':'其他页')+'由别的 session 负责');
+  });
 
   // ---------- emoji + sound toggles ----------
   document.querySelectorAll('.emo').forEach(function(b){
